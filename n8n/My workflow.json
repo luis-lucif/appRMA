@@ -1,0 +1,69 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cliente-finalizado",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "3114bc36-4848-4e91-9c01-18e48c8cbba7",
+      "name": "Webhook",
+      "webhookId": "43049a3b-4c87-41c4-ab74-b872c5fa987e"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json.body.email}}\n",
+        "subject": "=Tu reparación está lista – {{ $json[\"body\"][\"producto\"] }}\n",
+        "message": "=Hola {{ $json[\"body\"][\"nombre\"] }},<br><br>\nTe avisamos que tu {{ $json[\"body\"][\"producto\"] }} está listo para ser retirado.<br>\n✅ Estado: {{ $json[\"body\"][\"estado\"] }}<br><br>\n¡Gracias por confiar en nuestro servicio técnico!\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        -144
+      ],
+      "id": "36f173da-bd3b-406e-b7e4-744d9ddb6ab0",
+      "name": "Send a message",
+      "webhookId": "076b0ba2-1193-4a52-b7ae-9a98e2ab3f69",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EyLm0m2UqAbq7TVV",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2e1c9c27-3a2a-4c96-af8e-95cd5d5e3328",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "db749ae84bba4a32216e3643be0810b8c39dbd42aac8dd3c277abb8b4ba3874b"
+  },
+  "id": "rBZaZcipv1fmfMPG",
+  "tags": []
+}
