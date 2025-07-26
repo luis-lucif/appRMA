@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Servicio Técnico - Clientes</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <h1 class="mb-4">Clientes registrados</h1>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a href="{{ url_for('add_client') }}" class="btn btn-primary">➕ Agregar nuevo cliente</a>
+            <form class="d-flex" method="GET" action="{{ url_for('index') }}">
+                <input type="text" name="buscar" class="form-control me-2" placeholder="Buscar por nombre, producto o estado">
+                <input type="date" name="fecha" class="form-control me-2" placeholder="Buscar por fecha">
+                <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+            </form>
+        </div>
+        <table class="table table-bordered table-hover bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Producto</th>
+                    <th>Estado</th>
+                    <th>Fecha de ingreso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                <tr>
+                    <td>{{ cliente[0] }}</td>
+                    <td>{{ cliente[1] }}</td>
+                    <td>{{ cliente[5] }}</td>
+                    <td>{{ cliente[7] }}</td>
+                    <td>{{ cliente[9][:10] if cliente[9] else '' }}</td>
+                    <td>
+                        <a href="{{ url_for('client_detail', id=cliente[0]) }}" class="btn btn-sm btn-info">Ver</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay clientes registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
