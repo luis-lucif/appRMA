@@ -1,0 +1,74 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+}
+
+enum TicketStatus {
+  INGRESADO
+  EN_REPARACION
+  PARA_ENTREGAR
+  ENTREGADO
+}
+
+enum TicketLocation {
+  LIBERTAD
+  LARRAZABAL
+  CORREO
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(TECHNICIAN)
+  tickets   RepairTicket[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  fullName  String
+  phone     String
+  email     String?
+  tickets   RepairTicket[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RepairTicket {
+  id                 String         @id @default(uuid())
+  clientId           String
+  client             Client         @relation(fields: [clientId], references: [id])
+  userId             String
+  user               User           @relation(fields: [userId], references: [id])
+  
+  location           TicketLocation
+  productModel       String
+  category           String
+  faultDescription   String
+  purchaseInvoiceUrl String?
+  
+  // Shipping Details (for CORREO)
+  shippingProvince   String?
+  shippingCity       String?
+  shippingAddress    String?
+  shippingPostalCode String?
+  shippingNotes      String?
+
+  internalNotes      String?
+
+  status             TicketStatus   @default(INGRESADO)
+  
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
