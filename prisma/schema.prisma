@@ -1,10 +1,11 @@
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
 }
 
 enum Role {
@@ -57,6 +58,7 @@ model RepairTicket {
   category           String
   faultDescription   String
   purchaseInvoiceUrl String?
+  attachments        String[]       @default([])
   
   // Shipping Details (for CORREO)
   shippingProvince   String?

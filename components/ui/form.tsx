@@ -79,6 +79,7 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <FormItemContext.Provider value={{ id }}>
       <div
+        suppressHydrationWarning
         data-slot="form-item"
         className={cn("grid gap-2", className)}
         {...props}

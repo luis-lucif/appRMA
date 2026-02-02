@@ -32,14 +32,14 @@ export function UploadButton({ onUploadComplete, label = "Subir Archivo" }: Uplo
       })
 
       if (!res.ok) throw new Error("Upload failed")
-      
+
       const { key, publicUrl } = await res.json()
 
       setIsSuccess(true)
       if (onUploadComplete) {
-        onUploadComplete("", key, publicUrl) 
+        onUploadComplete("", key, publicUrl)
       }
-      
+
     } catch (error) {
       console.error("Upload error:", error)
       alert("Error al subir archivo")
@@ -56,26 +56,26 @@ export function UploadButton({ onUploadComplete, label = "Subir Archivo" }: Uplo
 
   return (
     <div className="flex items-center gap-2">
-      <Input 
-        type="file" 
-        className="hidden" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
+      <Input
+        type="file"
+        className="hidden"
+        ref={fileInputRef}
+        onChange={handleFileChange}
       />
-      <Button 
-        onClick={handleButtonClick} 
-        disabled={isUploading} 
+      <Button
+        onClick={handleButtonClick}
+        disabled={isUploading}
         variant={isSuccess ? "outline" : "default"}
         size="sm"
       >
         {isUploading ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          <Loader2 className="h-4 w-4 animate-spin mr-2" />
         ) : isSuccess ? (
-            <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
+          <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
         ) : (
-            <Upload className="h-4 w-4 mr-2" />
+          <Upload className="h-4 w-4 mr-2" />
         )}
-        {isUploading ? "Subiendo..." : isSuccess ? "Subido" : label}
+        {isUploading ? "Subiendo..." : isSuccess ? "Agregar" : label}
       </Button>
     </div>
   )

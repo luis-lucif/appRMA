@@ -8,92 +8,94 @@ import { z } from "zod"
 // We'll reuse the schema or define a slightly looser one for the action if needed, 
 // but receiving the raw data is fine.
 const TicketSchema = z.object({
-  clientName: z.string().min(2),
-  clientPhone: z.string().min(6),
-  clientEmail: z.string().email().optional().or(z.literal("")),
-  productModel: z.string().min(2),
-  category: z.string().min(2),
-  faultDescription: z.string().min(5),
-  location: z.enum(["LIBERTAD", "LARRAZABAL", "CORREO"]),
-  // New Shipping Fields
-  shippingProvince: z.string().optional(),
-  shippingCity: z.string().optional(),
-  shippingAddress: z.string().optional(),
-  shippingPostalCode: z.string().optional(),
-  shippingPostalCode: z.string().optional(),
-  shippingNotes: z.string().optional(),
-  // File Upload
-  purchaseInvoiceUrl: z.string().optional(),
+    clientName: z.string().min(2),
+    clientPhone: z.string().min(6),
+    clientEmail: z.string().email().optional().or(z.literal("")),
+    productModel: z.string().min(2),
+    category: z.string().min(2),
+    faultDescription: z.string().min(5),
+    location: z.enum(["LIBERTAD", "LARRAZABAL", "CORREO"]),
+    // New Shipping Fields
+    shippingProvince: z.string().optional(),
+    shippingCity: z.string().optional(),
+    shippingAddress: z.string().optional(),
+    shippingPostalCode: z.string().optional(),
+    shippingNotes: z.string().optional(),
+    // File Upload
+    purchaseInvoiceUrl: z.string().optional(),
+    attachments: z.array(z.string()).optional().default([]),
 })
 
 export async function createTicket(formData: z.infer<typeof TicketSchema>) {
-  const validatedFields = TicketSchema.safeParse(formData)
+    const validatedFields = TicketSchema.safeParse(formData)
 
-  if (!validatedFields.success) {
-    return { error: "Campos inválidos" }
-  }
+    if (!validatedFields.success) {
+        return { error: "Campos inválidos" }
+    }
 
-  const { 
-    clientName, clientPhone, clientEmail, productModel, category, faultDescription, location,
-    shippingProvince, shippingCity, shippingAddress, shippingPostalCode, shippingNotes, purchaseInvoiceUrl
-  } = validatedFields.data
+    const {
+        clientName, clientPhone, clientEmail, productModel, category, faultDescription, location,
+        shippingProvince, shippingCity, shippingAddress, shippingPostalCode, shippingNotes, purchaseInvoiceUrl, attachments
+    } = validatedFields.data
 
-  try {
-    // 1. Get or Create a Default User (Simulation)
-    const user = await db.user.upsert({
-      where: { email: "demo@tecnico.com" },
-      update: {},
-      create: {
-        email: "demo@tecnico.com",
-        name: "Técnico Demo",
-        role: "TECHNICIAN"
-      }
-    })
-
-    // 2. Create Client and Ticket
-    const newTicket = await db.repairTicket.create({
-      data: {
-        location,
-        productModel,
-        category,
-        faultDescription,
-        status: "INGRESADO",
-        
-        // Shipping Details
-        shippingProvince,
-        shippingCity,
-        shippingAddress,
-        shippingPostalCode,
-        shippingPostalCode,
-        shippingNotes,
-        
-        purchaseInvoiceUrl, // Save URL to DB
-
-        user: {
-            connect: { id: user.id }
-        },
-        client: {
+    try {
+        // 1. Get or Create a Default User (Simulation)
+        const user = await db.user.upsert({
+            where: { email: "demo@tecnico.com" },
+            update: {},
             create: {
-                fullName: clientName,
-                phone: clientPhone,
-                email: clientEmail || null
+                email: "demo@tecnico.com",
+                name: "Técnico Demo",
+                role: "TECHNICIAN"
             }
-        }
-      }
-    })
+        })
 
-    revalidatePath("/dashboard")
-    return { success: true, ticketId: newTicket.id }
+        // 2. Create Client and Ticket
+        const newTicket = await db.repairTicket.create({
+            data: {
+                location,
+                productModel,
+                category,
+                faultDescription,
+                status: "INGRESADO",
 
-  } catch (error) {
-    console.error("Error creating ticket:", error)
-    return { error: "Error al guardar en base de datos" }
-  }
+                // Shipping Details
+                shippingProvince,
+                shippingCity,
+                shippingAddress,
+                shippingPostalCode,
+                shippingNotes,
+
+                purchaseInvoiceUrl, // Save URL to DB
+                attachments: (attachments && attachments.length > 0)
+                    ? attachments
+                    : (purchaseInvoiceUrl ? [purchaseInvoiceUrl] : []),
+
+                user: {
+                    connect: { id: user.id }
+                },
+                client: {
+                    create: {
+                        fullName: clientName,
+                        phone: clientPhone,
+                        email: clientEmail || null
+                    }
+                }
+            }
+        })
+
+        revalidatePath("/dashboard")
+        return { success: true, ticketId: newTicket.id }
+
+    } catch (error) {
+        console.error("Error creating ticket:", error)
+        return { error: "Error al guardar en base de datos" }
+    }
 }
 
 const NotesSchema = z.object({
-  ticketId: z.string().uuid(),
-  notes: z.string()
+    ticketId: z.string().uuid(),
+    notes: z.string()
 })
 
 export async function updateTicketNotes(formData: z.infer<typeof NotesSchema>) {
@@ -108,7 +110,7 @@ export async function updateTicketNotes(formData: z.infer<typeof NotesSchema>) {
             where: { id: validated.data.ticketId },
             data: { internalNotes: validated.data.notes }
         })
-        
+
         revalidatePath(`/tickets/${validated.data.ticketId}`)
         return { success: true }
     } catch (error) {
@@ -118,8 +120,8 @@ export async function updateTicketNotes(formData: z.infer<typeof NotesSchema>) {
 }
 
 const StatusSchema = z.object({
-  ticketId: z.string().uuid(),
-  status: z.enum(["INGRESADO", "EN_REPARACION", "PARA_ENTREGAR", "ENTREGADO"])
+    ticketId: z.string().uuid(),
+    status: z.enum(["INGRESADO", "EN_REPARACION", "PARA_ENTREGAR", "ENTREGADO"])
 })
 
 export async function updateTicketStatus(formData: z.infer<typeof StatusSchema>) {
@@ -134,7 +136,7 @@ export async function updateTicketStatus(formData: z.infer<typeof StatusSchema>)
             where: { id: validated.data.ticketId },
             data: { status: validated.data.status }
         })
-        
+
         revalidatePath("/dashboard")
         revalidatePath("/egresos")
         revalidatePath(`/tickets/${validated.data.ticketId}`)
@@ -146,10 +148,10 @@ export async function updateTicketStatus(formData: z.infer<typeof StatusSchema>)
 }
 
 const EditTicketSchema = z.object({
-  ticketId: z.string().uuid(),
-  productModel: z.string().min(1, "Modelo requerido"),
-  category: z.string().min(1, "Categoría requerida"),
-  faultDescription: z.string().min(1, "Descripción requerida")
+    ticketId: z.string().uuid(),
+    productModel: z.string().min(1, "Modelo requerido"),
+    category: z.string().min(1, "Categoría requerida"),
+    faultDescription: z.string().min(1, "Descripción requerida")
 })
 
 export async function updateTicketDetails(formData: z.infer<typeof EditTicketSchema>) {
@@ -162,13 +164,13 @@ export async function updateTicketDetails(formData: z.infer<typeof EditTicketSch
     try {
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
-            data: { 
+            data: {
                 productModel: validated.data.productModel,
                 category: validated.data.category,
                 faultDescription: validated.data.faultDescription
             }
         })
-        
+
         revalidatePath(`/tickets/${validated.data.ticketId}`)
         return { success: true }
     } catch (error) {
@@ -178,9 +180,9 @@ export async function updateTicketDetails(formData: z.infer<typeof EditTicketSch
 }
 
 const EditClientSchema = z.object({
-  clientId: z.string().uuid(),
-  phone: z.string().min(1, "Teléfono requerido"),
-  email: z.string().optional().nullable() // Allow empty/null
+    clientId: z.string().uuid(),
+    phone: z.string().min(1, "Teléfono requerido"),
+    email: z.string().optional().nullable() // Allow empty/null
 })
 
 export async function updateClientDetails(formData: z.infer<typeof EditClientSchema>) {
@@ -193,12 +195,12 @@ export async function updateClientDetails(formData: z.infer<typeof EditClientSch
     try {
         await db.client.update({
             where: { id: validated.data.clientId },
-            data: { 
+            data: {
                 phone: validated.data.phone,
                 email: validated.data.email || null
             }
         })
-        
+
         revalidatePath("/tickets/[id]", "page") // Invalidate basic ticket pages
         revalidatePath("/dashboard")
         return { success: true }
@@ -209,12 +211,12 @@ export async function updateClientDetails(formData: z.infer<typeof EditClientSch
 }
 
 const EditShippingSchema = z.object({
-  ticketId: z.string().uuid(),
-  shippingProvince: z.string().nullable().optional(),
-  shippingCity: z.string().nullable().optional(),
-  shippingAddress: z.string().nullable().optional(),
-  shippingPostalCode: z.string().nullable().optional(),
-  shippingNotes: z.string().nullable().optional(),
+    ticketId: z.string().uuid(),
+    shippingProvince: z.string().nullable().optional(),
+    shippingCity: z.string().nullable().optional(),
+    shippingAddress: z.string().nullable().optional(),
+    shippingPostalCode: z.string().nullable().optional(),
+    shippingNotes: z.string().nullable().optional(),
 })
 
 export async function updateShippingDetails(formData: z.infer<typeof EditShippingSchema>) {
@@ -227,7 +229,7 @@ export async function updateShippingDetails(formData: z.infer<typeof EditShippin
     try {
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
-            data: { 
+            data: {
                 shippingProvince: validated.data.shippingProvince,
                 shippingCity: validated.data.shippingCity,
                 shippingAddress: validated.data.shippingAddress,
@@ -235,11 +237,126 @@ export async function updateShippingDetails(formData: z.infer<typeof EditShippin
                 shippingNotes: validated.data.shippingNotes,
             }
         })
-        
+
         revalidatePath(`/tickets/${validated.data.ticketId}`)
         return { success: true }
     } catch (error) {
         console.error("Error updating shipping:", error)
         return { error: "Error al actualizar envío" }
+    }
+}
+
+const UpdateInvoiceSchema = z.object({
+    ticketId: z.string().uuid(),
+    purchaseInvoiceUrl: z.string().nullable(),
+})
+
+export async function updateTicketInvoice(formData: z.infer<typeof UpdateInvoiceSchema>) {
+    const validated = UpdateInvoiceSchema.safeParse(formData)
+
+    if (!validated.success) {
+        return { error: "Datos inválidos" }
+    }
+
+    try {
+        await db.repairTicket.update({
+            where: { id: validated.data.ticketId },
+            data: { purchaseInvoiceUrl: validated.data.purchaseInvoiceUrl }
+        })
+
+        revalidatePath(`/tickets/${validated.data.ticketId}`)
+        return { success: true }
+    } catch (error) {
+        console.error("Error updating invoice:", error)
+        return { error: "Error al actualizar factura" }
+    }
+}
+
+const UpdateAttachmentsSchema = z.object({
+    ticketId: z.string().uuid(),
+    attachments: z.array(z.string()),
+})
+
+export async function updateTicketAttachments(formData: z.infer<typeof UpdateAttachmentsSchema>) {
+    const validated = UpdateAttachmentsSchema.safeParse(formData)
+
+    if (!validated.success) {
+        return { error: "Datos inválidos" }
+    }
+
+    try {
+        await db.repairTicket.update({
+            where: { id: validated.data.ticketId },
+            data: { attachments: validated.data.attachments }
+        })
+
+        revalidatePath(`/tickets/${validated.data.ticketId}`)
+        return { success: true }
+    } catch (error) {
+        console.error("Error updating attachments:", error)
+        return { error: "Error al actualizar adjuntos" }
+    }
+}
+
+const SearchClientSchema = z.object({
+    query: z.string().min(1)
+})
+
+export async function searchClients(formData: z.infer<typeof SearchClientSchema>) {
+    const validated = SearchClientSchema.safeParse(formData)
+
+    if (!validated.success) return { error: "Búsqueda inválida" }
+
+    const query = validated.data.query
+
+    try {
+        const clients = await db.client.findMany({
+            where: {
+                fullName: {
+                    contains: query,
+                    mode: 'insensitive'
+                }
+            },
+            include: {
+                tickets: true
+            },
+            take: 20
+        })
+        return { success: true, clients }
+    } catch (error) {
+        console.error("Error searching clients:", error)
+        return { error: "Error al buscar clientes" }
+    }
+}
+
+const SearchProductSchema = z.object({
+    query: z.string().min(1)
+})
+
+export async function searchProducts(formData: z.infer<typeof SearchProductSchema>) {
+    const validated = SearchProductSchema.safeParse(formData)
+
+    if (!validated.success) return { error: "Búsqueda inválida" }
+
+    const query = validated.data.query
+
+    try {
+        const tickets = await db.repairTicket.findMany({
+            where: {
+                OR: [
+                    { productModel: { contains: query, mode: 'insensitive' } },
+                    { category: { contains: query, mode: 'insensitive' } }
+                ]
+            },
+            include: {
+                client: true
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+        })
+        return { success: true, tickets }
+    } catch (error) {
+        console.error("Error searching products:", error)
+        return { error: "Error al buscar productos" }
     }
 }

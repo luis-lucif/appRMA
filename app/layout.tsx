@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -33,10 +33,10 @@ export default function RootLayout({
           <AppSidebar />
           <SidebarInset>
             <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
-               <div className="flex items-center gap-2 py-4">
-                  <SidebarTrigger />
-                  <span className="font-semibold">Sistema RMA</span>
-               </div>
+              <div className="flex items-center gap-2 py-4">
+                <SidebarTrigger />
+                <span className="font-semibold">Sistema RMA</span>
+              </div>
               {children}
             </main>
           </SidebarInset>

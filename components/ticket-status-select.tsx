@@ -19,7 +19,7 @@ interface TicketStatusSelectProps {
 
 export function TicketStatusSelect({ ticketId, currentStatus }: TicketStatusSelectProps) {
   const [isPending, startTransition] = useTransition()
-  
+
   const statusLabels = {
     INGRESADO: "Ingresado",
     EN_REPARACION: "En Reparación",
@@ -28,16 +28,16 @@ export function TicketStatusSelect({ ticketId, currentStatus }: TicketStatusSele
 
   const handleStatusChange = (value: string) => {
     startTransition(async () => {
-        // cast value because we know the options
-        await updateTicketStatus({ 
-            ticketId, 
-            status: value as "INGRESADO" | "EN_REPARACION" | "PARA_ENTREGAR" | "ENTREGADO" 
-        })
+      // cast value because we know the options
+      await updateTicketStatus({
+        ticketId,
+        status: value as "INGRESADO" | "EN_REPARACION" | "PARA_ENTREGAR" | "ENTREGADO"
+      })
     })
   }
 
   // Determine color based on status (visual feedback in trigger)
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     INGRESADO: "bg-green-600",
     EN_REPARACION: "bg-yellow-500",
     PARA_ENTREGAR: "bg-blue-600",
@@ -52,10 +52,8 @@ export function TicketStatusSelect({ ticketId, currentStatus }: TicketStatusSele
       <SelectContent>
         <SelectItem value="INGRESADO">Ingresado</SelectItem>
         <SelectItem value="EN_REPARACION">En Reparación</SelectItem>
-        <SelectItem value="PARA_ENTREGAR">Terminado</SelectItem>
-        {currentStatus === "ENTREGADO" && (
-            <SelectItem value="ENTREGADO">Retirado / Entregado</SelectItem>
-        )}
+        <SelectItem value="PARA_ENTREGAR">Para Entregar</SelectItem>
+        <SelectItem value="ENTREGADO">Retirado</SelectItem>
       </SelectContent>
     </Select>
   )
