@@ -9,6 +9,8 @@ import { RepairTicket, Client } from "@prisma/client"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
 // Helper for status badge colors (copied from page.tsx or moved to utils ideally)
 const statusColors: Record<string, string> = {
@@ -92,9 +94,16 @@ export default function SearchProductPage() {
                                     </div>
                                 </div>
 
-                                <Badge className={statusColors[ticket.status] || "bg-gray-500"}>
-                                    {ticket.status === 'ENTREGADO' ? 'Retirado' : ticket.status.replace("_", " ")}
-                                </Badge>
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="text-xs text-muted-foreground mb-1">
+                                        {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
+                                    </div>
+                                    <Badge className={statusColors[ticket.status] || "bg-gray-500"}>
+                                        {ticket.status === 'ENTREGADO' ? 'Retirado' :
+                                            ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
+                                                ticket.status.replace("_", " ")}
+                                    </Badge>
+                                </div>
                             </CardContent>
                         </Card>
                     </Link>

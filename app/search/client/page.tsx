@@ -103,7 +103,9 @@ export default function SearchClientPage() {
                                                     {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
                                                 </div>
                                                 <Badge className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[ticket.status] || "bg-gray-500"}`}>
-                                                    {ticket.status.replace("_", " ")}
+                                                    {ticket.status === 'ENTREGADO' ? 'Retirado' :
+                                                        ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
+                                                            ticket.status.replace("_", " ")}
                                                 </Badge>
                                             </div>
                                             <Link href={`/tickets/${ticket.id}`} passHref>

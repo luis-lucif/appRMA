@@ -23,7 +23,7 @@ export function TicketStatusSelect({ ticketId, currentStatus }: TicketStatusSele
   const statusLabels = {
     INGRESADO: "Ingresado",
     EN_REPARACION: "En Reparación",
-    PARA_ENTREGAR: "Terminado (A Egresos)", // User asked for "Terminado"
+    PARA_ENTREGAR: "Para Entregar",
   }
 
   const handleStatusChange = (value: string) => {
