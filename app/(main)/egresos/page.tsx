@@ -9,7 +9,13 @@ export const dynamic = 'force-dynamic'
 
 import { TicketDeliveryButton } from "@/components/ticket-delivery-button"
 
+import { redirect } from "next/navigation"
+import { getUserRole } from "@/app/actions"
+
 export default async function EgresosPage() {
+    const role = await getUserRole()
+    if (role !== 'admin') redirect('/dashboard')
+
     // Fetch tickets that are Finished (PARA_ENTREGAR) or Delivered (ENTREGADO)
     const tickets = await db.repairTicket.findMany({
         where: {

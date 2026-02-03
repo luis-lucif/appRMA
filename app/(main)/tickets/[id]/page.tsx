@@ -13,6 +13,8 @@ import { InvoiceManager } from "@/components/invoice-manager"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Phone, Mail, MapPin, Truck, Calendar, User, Smartphone, AlertCircle, FileText, ExternalLink } from "lucide-react"
+import { getUserRole as getUserRoleAction } from "@/app/actions"
+
 
 interface TicketDetailPageProps {
     params: Promise<{
@@ -25,13 +27,21 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
     const ticket = await db.repairTicket.findUnique({
         where: { id },
         include: {
-            client: true
+            client: true,
+            logs: {
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            }
         }
     })
 
     if (!ticket) {
         notFound()
     }
+
+    const role = await getUserRoleAction()
+    const isAdmin = role === 'admin'
 
     const statusColors = {
         INGRESADO: "bg-green-500",
@@ -50,7 +60,20 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                     </p>
                 </div>
 
-                <TicketStatusSelect ticketId={ticket.id} currentStatus={ticket.status} />
+                <div className="flex items-center gap-2">
+                    <TicketStatusSelect ticketId={ticket.id} currentStatus={ticket.status} />
+                    {isAdmin && (
+                        <form action={async () => {
+                            "use server"
+                            const { deleteTicket } = await import("@/app/actions")
+                            await deleteTicket({ ticketId: ticket.id })
+                        }}>
+                            <button className="bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600">
+                                Borrar
+                            </button>
+                        </form>
+                    )}
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -64,7 +87,7 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                                     <Smartphone className="h-5 w-5" />
                                     Detalles del Equipo
                                 </div>
-                                <EditTicketDialog ticket={ticket} />
+                                {isAdmin && <EditTicketDialog ticket={ticket} />}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4">
@@ -101,7 +124,7 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                                         <Truck className="h-5 w-5" />
                                         Datos de Envío
                                     </div>
-                                    <EditShippingDialog ticket={ticket} />
+                                    {isAdmin && <EditShippingDialog ticket={ticket} />}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="grid gap-4">
@@ -147,7 +170,7 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                                     <User className="h-5 w-5" />
                                     Cliente
                                 </div>
-                                <EditClientDialog client={ticket.client} />
+                                {isAdmin && <EditClientDialog client={ticket.client} />}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -172,7 +195,10 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
 
                     <InvoiceManager
                         ticketId={ticket.id}
-                        initialAttachments={ticket.attachments || (ticket.purchaseInvoiceUrl ? [ticket.purchaseInvoiceUrl] : [])}
+                        initialAttachments={Array.from(new Set([
+                            ...(ticket.attachments || []),
+                            ...(ticket.purchaseInvoiceUrl ? [ticket.purchaseInvoiceUrl] : [])
+                        ]))}
                     />
 
                     <Card>
@@ -188,6 +214,47 @@ export default async function TicketDetailPage({ params }: TicketDetailPageProps
                     </Card>
                 </div>
 
+                {/* Historial de Cambios (Audit Logs) */}
+                <div className="md:col-span-3">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <FileText className="h-5 w-5" />
+                                Historial de Cambios
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {ticket.logs && ticket.logs.length > 0 ? (
+                                    ticket.logs.map((log: any) => (
+                                        <div key={log.id} className="flex items-start gap-4 border-b pb-4 last:border-0 last:pb-0">
+                                            <div className="flex-1 space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-medium leading-none">
+                                                        {log.action === 'CREATED' && 'Ticket Creado'}
+                                                        {log.action === 'STATUS_CHANGE' && 'Cambio de Estado'}
+                                                        {log.action === 'DELIVERED' && 'Entrega / Retiro'}
+                                                        {!['CREATED', 'STATUS_CHANGE', 'DELIVERED'].includes(log.action) && log.action}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {format(new Date(log.createdAt), "d MMM yyyy, HH:mm", { locale: es })}
+                                                    </p>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {log.details}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-sm text-muted-foreground text-center py-4">
+                                        No hay registros de actividad.
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     )

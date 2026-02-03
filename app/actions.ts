@@ -4,6 +4,43 @@ import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
+import { createClient } from "@/lib/supabase/server"
+
+export async function getUserRole() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return null
+
+    // console.log("getUserRole - User ID:", user.id) // Commented out to reduce noise
+    let profile = await db.profile.findUnique({
+        where: { id: user.id }
+    })
+    // console.log("getUserRole - Profile found:", profile)
+
+    // Self-healing: Create profile if it doesn't exist
+    if (!profile) {
+        const isAdminEmail = user.email === 'casayout.777@gmail.com'
+        const newRole = isAdminEmail ? 'admin' : 'tecnico'
+
+        console.log(`Creating missing profile for ${user.email} as ${newRole}`)
+
+        try {
+            profile = await db.profile.create({
+                data: {
+                    id: user.id,
+                    role: newRole
+                }
+            })
+        } catch (error) {
+            console.error("Error creating profile:", error)
+            // Fallback if concurrent creation happened or other error
+            return 'tecnico'
+        }
+    }
+
+    return profile?.role || 'tecnico'
+}
 
 // We'll reuse the schema or define a slightly looser one for the action if needed, 
 // but receiving the raw data is fine.
@@ -35,8 +72,12 @@ export async function createTicket(formData: z.infer<typeof TicketSchema>) {
 
     const {
         clientName, clientPhone, clientEmail, productModel, category, faultDescription, location,
-        shippingProvince, shippingCity, shippingAddress, shippingPostalCode, shippingNotes, purchaseInvoiceUrl, attachments
+        shippingProvince, shippingCity, shippingAddress, shippingPostalCode, shippingNotes, purchaseInvoiceUrl: rawInvoiceUrl, attachments
     } = validatedFields.data
+
+    console.log("createTicket received:", { clientName, rawInvoiceUrl, attachments }) // Debug
+
+    const purchaseInvoiceUrl = rawInvoiceUrl === "" ? null : rawInvoiceUrl
 
     try {
         // 1. Get or Create a Default User (Simulation)
@@ -81,6 +122,16 @@ export async function createTicket(formData: z.infer<typeof TicketSchema>) {
                         email: clientEmail || null
                     }
                 }
+            }
+        })
+
+        // Audit Log: CREATED
+        await db.ticketLog.create({
+            data: {
+                ticketId: newTicket.id,
+                userId: user.id,
+                action: 'CREATED',
+                details: 'Ticket ingresado al sistema'
             }
         })
 
@@ -132,9 +183,30 @@ export async function updateTicketStatus(formData: z.infer<typeof StatusSchema>)
     }
 
     try {
+        // Need user ID for logging
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { error: "Usuario no autenticado" }
+
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
             data: { status: validated.data.status }
+        })
+
+        // Audit Log: STATUS_CHANGE or DELIVERED
+        const action = validated.data.status === 'ENTREGADO' ? 'DELIVERED' : 'STATUS_CHANGE'
+        const details = validated.data.status === 'ENTREGADO'
+            ? 'Equipo entregado/retirado por cliente'
+            : `Estado cambiado a ${validated.data.status}`
+
+        // Safe logging - don't block if logging fails? Or maybe block. Let's block to ensure trace.
+        await db.ticketLog.create({
+            data: {
+                ticketId: validated.data.ticketId,
+                userId: user.id,
+                action: action,
+                details: details
+            }
         })
 
         revalidatePath("/dashboard")
@@ -162,6 +234,9 @@ export async function updateTicketDetails(formData: z.infer<typeof EditTicketSch
     }
 
     try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para realizar esta acción" }
+
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
             data: {
@@ -193,6 +268,9 @@ export async function updateClientDetails(formData: z.infer<typeof EditClientSch
     }
 
     try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para realizar esta acción" }
+
         await db.client.update({
             where: { id: validated.data.clientId },
             data: {
@@ -227,6 +305,9 @@ export async function updateShippingDetails(formData: z.infer<typeof EditShippin
     }
 
     try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para realizar esta acción" }
+
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
             data: {
@@ -259,6 +340,9 @@ export async function updateTicketInvoice(formData: z.infer<typeof UpdateInvoice
     }
 
     try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para realizar esta acción" }
+
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
             data: { purchaseInvoiceUrl: validated.data.purchaseInvoiceUrl }
@@ -285,6 +369,9 @@ export async function updateTicketAttachments(formData: z.infer<typeof UpdateAtt
     }
 
     try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para realizar esta acción" }
+
         await db.repairTicket.update({
             where: { id: validated.data.ticketId },
             data: { attachments: validated.data.attachments }
@@ -358,5 +445,30 @@ export async function searchProducts(formData: z.infer<typeof SearchProductSchem
     } catch (error) {
         console.error("Error searching products:", error)
         return { error: "Error al buscar productos" }
+    }
+}
+
+const DeleteTicketSchema = z.object({
+    ticketId: z.string().uuid()
+})
+
+export async function deleteTicket(formData: z.infer<typeof DeleteTicketSchema>) {
+    const validated = DeleteTicketSchema.safeParse(formData)
+
+    if (!validated.success) return { error: "Ticket inválido" }
+
+    try {
+        const role = await getUserRole()
+        if (role !== 'admin') return { error: "No tienes permisos para eliminar tickets" }
+
+        await db.repairTicket.delete({
+            where: { id: validated.data.ticketId }
+        })
+
+        revalidatePath("/dashboard")
+        return { success: true }
+    } catch (error) {
+        console.error("Error deleting ticket:", error)
+        return { error: "Error al eliminar el ticket" }
     }
 }
