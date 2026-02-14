@@ -70,57 +70,52 @@ export default function SearchClientPage() {
                 )}
 
                 {results.map((client) => (
-                    <Card key={client.id} className="hover:bg-muted/30 transition-colors">
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 bg-primary/10 rounded-full">
-                                    <User className="h-6 w-6 text-primary" />
-                                </div>
-                                <div>
-                                    <div className="font-semibold text-lg">{client.fullName}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                        {client.phone} {client.email && `• ${client.email}`}
+                    <div key={client.id} className="neon-border-flow p-[1px] rounded-lg bg-transparent transition-all duration-300 group/item relative">
+                        <div className="flex flex-col gap-2 rounded-lg bg-[#0a0a0a] p-4 group-hover/item:bg-black transition-colors cursor-default text-white shadow-lg relative z-10 h-full border border-white/5 group-hover/item:border-transparent">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-2 bg-primary/10 rounded-full">
+                                        <User className="h-6 w-6 text-primary" />
                                     </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        {client.tickets.length} tickets registrados
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Assuming we want to see the latest ticket or list of tickets 
-                                Since there isn't a dedicated client page yet, maybe we link to the latest ticket 
-                                or just show a list of tickets if expanded?
-                                For now, let's link to the first ticket if exists, or just show ID.
-                                Ideally, we'd have /clients/[id] page. 
-                                Since we don't, I'll list the tickets below simply.
-                             */}
-                            <div className="flex flex-col gap-3 items-end">
-                                {client.tickets.length > 0 ? (
-                                    client.tickets.map(ticket => (
-                                        <div key={ticket.id} className="flex items-center gap-3">
-                                            <div className="text-right">
-                                                <div className="text-xs text-muted-foreground">
-                                                    {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
-                                                </div>
-                                                <Badge className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[ticket.status] || "bg-gray-500"}`}>
-                                                    {ticket.status === 'ENTREGADO' ? 'Retirado' :
-                                                        ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
-                                                            ticket.status.replace("_", " ")}
-                                                </Badge>
-                                            </div>
-                                            <Link href={`/tickets/${ticket.id}`} passHref>
-                                                <Button variant="outline" size="sm" className="h-8">
-                                                    Ver Ticket {ticket.productModel}
-                                                </Button>
-                                            </Link>
+                                    <div>
+                                        <div className="font-semibold text-lg group-hover/item:text-[#FF5F1F] transition-colors duration-300">{client.fullName}</div>
+                                        <div className="text-sm text-muted-foreground group-hover/item:text-gray-400 transition-colors">
+                                            {client.phone} {client.email && `• ${client.email}`}
                                         </div>
-                                    ))
-                                ) : (
-                                    <span className="text-sm text-muted-foreground">Sin tickets</span>
-                                )}
+                                        <div className="text-xs text-muted-foreground mt-1 group-hover/item:text-white transition-colors">
+                                            {client.tickets.length} tickets registrados
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex flex-col gap-3 items-end">
+                                    {client.tickets.length > 0 ? (
+                                        client.tickets.map(ticket => (
+                                            <div key={ticket.id} className="flex items-center gap-3">
+                                                <div className="text-right">
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
+                                                    </div>
+                                                    <Badge className={`text-[10px] px-1.5 py-0 h-5 ${statusColors[ticket.status] || "bg-gray-500"}`}>
+                                                        {ticket.status === 'ENTREGADO' ? 'Retirado' :
+                                                            ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
+                                                                ticket.status.replace("_", " ")}
+                                                    </Badge>
+                                                </div>
+                                                <Button asChild variant="outline" size="sm" className="h-8 group-hover/item:border-[#FF5F1F] group-hover/item:text-[#FF5F1F] transition-all duration-300 cursor-pointer">
+                                                    <Link href={`/tickets/${ticket.id}`}>
+                                                        Ver Cliente {ticket.productModel}
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className="text-sm text-muted-foreground">Sin tickets</span>
+                                    )}
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 ))}
             </div>
         </div>

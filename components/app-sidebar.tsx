@@ -72,19 +72,19 @@ export function AppSidebar({ user, role }: { user: any, role: string | null }) {
                   {item.items ? (
                     <Collapsible defaultOpen className="group/collapsible">
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
-                          <item.icon />
-                          <span>{item.title}</span>
+                        <SidebarMenuButton className="h-12 border-b border-transparent hover:bg-black hover:border-[#FF5F1F] hover:text-[#FF5F1F] hover:shadow-[0_0_15px_rgba(255,95,31,0.3)] transition-all duration-300 group/menu-btn">
+                          <item.icon className="text-[#FF5F1F] group-hover/menu-btn:animate-pulse" />
+                          <span className="text-base font-medium">{item.title}</span>
                           <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
                       <CollapsibleContent>
-                        <SidebarMenuSub>
+                        <SidebarMenuSub className="border-l-white/10 ml-6">
                           {item.items.map((subItem) => (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild>
+                              <SidebarMenuSubButton asChild className="h-10 hover:bg-black hover:text-[#FF5F1F] hover:shadow-[0_0_10px_rgba(255,95,31,0.2)] transition-all duration-300">
                                 <Link href={subItem.url}>
-                                  <span>{subItem.title}</span>
+                                  <span className="text-sm">{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
@@ -93,10 +93,10 @@ export function AppSidebar({ user, role }: { user: any, role: string | null }) {
                       </CollapsibleContent>
                     </Collapsible>
                   ) : (
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild className="h-12 border-b border-transparent hover:bg-black hover:border-[#FF5F1F] hover:text-[#FF5F1F] hover:shadow-[0_0_15px_rgba(255,95,31,0.3)] transition-all duration-300 group/menu-btn">
                       <Link href={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
+                        <item.icon className="text-[#FF5F1F] group-hover/menu-btn:animate-pulse" />
+                        <span className="text-base font-medium">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                   )}

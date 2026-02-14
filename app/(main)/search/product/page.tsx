@@ -71,41 +71,43 @@ export default function SearchProductPage() {
                 )}
 
                 {results.map((ticket) => (
-                    <Link key={ticket.id} href={`/tickets/${ticket.id}`}>
-                        <Card className="hover:bg-muted/30 transition-colors cursor-pointer">
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-secondary/20 rounded-md">
-                                        <Laptop className="h-6 w-6 text-secondary-foreground" />
+                    <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block group/item relative">
+                        <div className="neon-border-flow p-[1px] rounded-lg bg-transparent transition-all duration-300">
+                            <div className="flex flex-col gap-2 rounded-lg bg-[#0a0a0a] p-4 group-hover/item:bg-black transition-colors cursor-pointer text-white shadow-lg relative z-10 h-full border border-white/5 group-hover/item:border-transparent">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-2 bg-secondary/20 rounded-md">
+                                            <Laptop className="h-6 w-6 text-secondary-foreground" />
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold text-lg flex items-center gap-2 group-hover/item:text-[#FF5F1F] transition-colors duration-300">
+                                                {ticket.productModel}
+                                                <Badge variant="outline" className="text-xs font-normal group-hover/item:border-[#FF5F1F] group-hover/item:text-[#FF5F1F] transition-colors">
+                                                    {ticket.category}
+                                                </Badge>
+                                            </div>
+                                            <div className="text-sm text-muted-foreground mt-1">
+                                                Cliente: <span className="font-medium text-foreground group-hover/item:text-white transition-colors">{ticket.client.fullName}</span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-md group-hover/item:text-gray-400 transition-colors">
+                                                Falla: {ticket.faultDescription}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div className="font-semibold text-lg flex items-center gap-2">
-                                            {ticket.productModel}
-                                            <Badge variant="outline" className="text-xs font-normal">
-                                                {ticket.category}
-                                            </Badge>
+    
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="text-xs text-muted-foreground mb-1">
+                                            {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
                                         </div>
-                                        <div className="text-sm text-muted-foreground mt-1">
-                                            Cliente: <span className="font-medium text-foreground">{ticket.client.fullName}</span>
-                                        </div>
-                                        <div className="text-xs text-muted-foreground mt-0.5 truncate max-w-md">
-                                            Falla: {ticket.faultDescription}
-                                        </div>
+                                        <Badge className={statusColors[ticket.status] || "bg-gray-500"}>
+                                            {ticket.status === 'ENTREGADO' ? 'Retirado' :
+                                                ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
+                                                    ticket.status.replace("_", " ")}
+                                        </Badge>
                                     </div>
                                 </div>
-
-                                <div className="flex flex-col items-end gap-1">
-                                    <div className="text-xs text-muted-foreground mb-1">
-                                        {format(new Date(ticket.createdAt), "dd MMM yyyy", { locale: es })}
-                                    </div>
-                                    <Badge className={statusColors[ticket.status] || "bg-gray-500"}>
-                                        {ticket.status === 'ENTREGADO' ? 'Retirado' :
-                                            ticket.status === 'PARA_ENTREGAR' ? 'Para Entregar' :
-                                                ticket.status.replace("_", " ")}
-                                    </Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
+                            </div>
+                        </div>
                     </Link>
                 ))}
             </div>
